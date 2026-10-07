@@ -1,7 +1,21 @@
-node_modules
+node_modules/
 # Keep environment variables out of version control
+.env
+.env.*
 
 /generated/prisma
 
-dist
+dist/
+build/
 uploads/
+
+# Python & ML
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Logs & temp
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

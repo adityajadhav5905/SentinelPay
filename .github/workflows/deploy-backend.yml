@@ -12,8 +12,27 @@ jobs:
     name: Deploy Backend to EC2
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check Deployment Credentials
+        id: check_credentials
+        env:
+          EC2_HOST: ${{ secrets.BACKEND_EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          if [ -n "$EC2_HOST" ] && [ -n "$EC2_USER" ] && [ -n "$EC2_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Deployment secrets detected. Proceeding with EC2 deployment."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deployment Skipped::EC2 deployment secrets (BACKEND_EC2_HOST, EC2_USER, EC2_SSH_KEY) are not configured. Deployment step skipped."
+          fi
+
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        if: steps.check_credentials.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.BACKEND_EC2_HOST }}
           username: ${{ secrets.EC2_USER }}

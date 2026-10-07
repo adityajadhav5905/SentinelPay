@@ -8,12 +8,54 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Deploy Frontend to EC2
+  build-and-test:
+    name: Verify Frontend Build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  deploy:
+    name: Deploy Frontend to EC2
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check Deployment Credentials
+        id: check_credentials
+        env:
+          EC2_HOST: ${{ secrets.FRONTEND_EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          if [ -n "$EC2_HOST" ] && [ -n "$EC2_USER" ] && [ -n "$EC2_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Deployment secrets detected. Proceeding with EC2 deployment."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deployment Skipped::EC2 deployment secrets (FRONTEND_EC2_HOST, EC2_USER, EC2_SSH_KEY) are not configured. Deployment step skipped."
+          fi
+
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+        if: steps.check_credentials.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.FRONTEND_EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
