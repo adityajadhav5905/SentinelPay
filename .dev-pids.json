@@ -1,0 +1,11 @@
+{
+    "auth-service":  4944,
+    "ingestion-service":  24256,
+    "notification-service":  24724,
+    "analytics-service":  21396,
+    "subscription-service":  18028,
+    "admin-service":  10160,
+    "ml-service":  20540,
+    "frontend":  20516,
+    "simulator":  15732
+}

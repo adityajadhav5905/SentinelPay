@@ -1,0 +1,42 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Frontend to EC2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.FRONTEND_EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/SentinelPay/frontend
+
+            # Pull latest code
+            git pull origin main
+
+            # Install deps and rebuild
+            npm install
+
+            VITE_CLERK_PUBLISHABLE_KEY=pk_test_c2FjcmVkLXN1bmZpc2gtMTQuY2xlcmsuYWNjb3VudHMuZGV2JA \
+            VITE_API_URL_AUTH=https://backend.sentinelpay.me \
+            VITE_API_URL_ANALYTICS=https://backend.sentinelpay.me \
+            VITE_API_URL_INGESTION=https://backend.sentinelpay.me \
+            VITE_API_URL_NOTIFICATION=https://backend.sentinelpay.me \
+            VITE_API_URL_SUBSCRIPTION=https://backend.sentinelpay.me \
+            VITE_API_URL_ML=https://backend.sentinelpay.me \
+            npm run build
+
+            # Restart Nginx to serve new build
+            sudo systemctl restart nginx
+
+            echo "✅ Frontend deployed!"

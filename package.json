@@ -1,0 +1,23 @@
+{
+  "name": "sentinelpay",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "infra": "docker compose -f backend/docker-compose.yml up -d redpanda redpanda-console redis postgres",
+    "db:push": "npm --prefix backend/packages/database run db:push",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:simulator": "npm --prefix simulator run dev",
+    "dev:auth": "npm --prefix backend/services/auth-service run dev",
+    "dev:ingestion": "npm --prefix backend/services/ingestion-service run dev",
+    "dev:notification": "npm --prefix backend/services/notification-service run dev",
+    "dev:analytics": "npm --prefix backend/services/analytics-service run dev",
+    "dev:subscription": "npm --prefix backend/services/subscription-service run dev",
+    "dev:admin": "npm --prefix backend/services/admin-service run dev",
+    "dev:ml": "cd backend/services/ml-service && py -m uvicorn src.main:app --port 8000",
+    "dev:backend": "npx concurrently -n auth,ingest,notif,analytics,sub,admin,ml -c blue,green,yellow,magenta,cyan,red,gray \"npm:dev:auth\" \"npm:dev:ingestion\" \"npm:dev:notification\" \"npm:dev:analytics\" \"npm:dev:subscription\" \"npm:dev:admin\" \"npm:dev:ml\"",
+    "dev": "npx concurrently -n frontend,sim,auth,ingest,notif,analytics,sub,admin,ml -c green,cyan,blue,green,yellow,magenta,cyan,red,gray \"npm:dev:frontend\" \"npm:dev:simulator\" \"npm:dev:auth\" \"npm:dev:ingestion\" \"npm:dev:notification\" \"npm:dev:analytics\" \"npm:dev:subscription\" \"npm:dev:admin\" \"npm:dev:ml\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "sentinelpay-backend",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "dependencies": {
+    "axios": "^1.13.5",
+    "form-data": "^4.0.5",
+    "jsonwebtoken": "^9.0.3"
+  }
+}

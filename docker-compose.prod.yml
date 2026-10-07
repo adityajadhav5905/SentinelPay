@@ -1,0 +1,162 @@
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.14
+    container_name: redpanda-prod
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+    ports:
+      - "127.0.0.1:9092:9092"
+      - "127.0.0.1:8082:8082"
+      - "127.0.0.1:8081:8081"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis-prod
+    ports:
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: services/auth-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3002:3002"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  subscription-service:
+    build:
+      context: ./backend
+      dockerfile: services/subscription-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3004:3004"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  ingestion-service:
+    build:
+      context: ./backend
+      dockerfile: services/ingestion-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  analytics-service:
+    build:
+      context: ./backend
+      dockerfile: services/analytics-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3003:3003"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: services/notification-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3001:3001"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  admin-service:
+    build:
+      context: ./backend
+      dockerfile: services/admin-service/Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:3005:3005"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+  ml-service:
+    build:
+      context: ./backend/services/ml-service
+      dockerfile: Dockerfile
+    env_file:
+      - .env.production
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    networks:
+      - sentinelpay-net
+    depends_on:
+      - redis
+      - redpanda
+
+networks:
+  sentinelpay-net:
+    driver: bridge

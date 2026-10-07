@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinelpay-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - sentinelpay-net
+
+networks:
+  sentinelpay-net:
+    driver: bridge
